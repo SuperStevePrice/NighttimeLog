@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nighttime Log</title>
+<style>
+  :root {
+    --bg: #0b0d10;
+    --surface: #15181c;
+    --surface2: #1d2126;
+    --border: #2a2f36;
+    --text: #e8e8e6;
+    --text-dim: #9aa0a6;
+    --accent: #5b8def;
+    --accent-text: #ffffff;
+    --danger: #e0574a;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5f7;
+      --surface: #ffffff;
+      --surface2: #eef0f3;
+      --border: #dde1e6;
+      --text: #1b1e22;
+      --text-dim: #666d76;
+      --accent: #2f5fd1;
+      --accent-text: #ffffff;
+      --danger: #c0392b;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface2: #eef0f3;
+    --border: #dde1e6;
+    --text: #1b1e22;
+    --text-dim: #666d76;
+    --accent: #2f5fd1;
+    --accent-text: #ffffff;
+    --danger: #c0392b;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Arial, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 18px 0;
+  }
+  h1 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 4px 0 2px;
+  }
+  .sub {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 18px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin: 14px 0 6px;
+  }
+  label:first-child { margin-top: 0; }
+  input[type="date"],
+  input[type="time"],
+  input[type="number"],
+  input[type="text"] {
+    width: 100%;
+    font-size: 1.15rem;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+  }
+  input::-webkit-date-and-time-value { text-align: left; }
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .row input { flex: 1; }
+  .smallbtn {
+    flex-shrink: 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  button { cursor: pointer; }
+  .save-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .save-btn:active { opacity: 0.8; }
+  .entries { margin-top: 4px; }
+  .entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .entry:last-child { border-bottom: none; }
+  .entry .meta {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .entry .meta .when {
+    font-weight: 600;
+  }
+  .entry .meta .oz {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .entry .meta .note {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 2px;
+  }
+  .entry .del {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 1.3rem;
+    line-height: 1;
+    padding: 4px 8px;
+  }
+  .empty {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 20px 0;
+  }
+  .total {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .actions button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .actions .copy { background: var(--accent); color: var(--accent-text); border: none; }
+  #toast {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  #toast.show { opacity: 1; }
+  #cmdbox {
+    width: 100%;
+    margin-top: 12px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.8rem;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    min-height: 100px;
+    resize: vertical;
+  }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Nighttime Log</h1>
+  <div class="sub">Date &amp; time of urination, amount (oz), and any notes.</div>
+
+  <div class="card">
+    <label for="date">Date</label>
+    <div class="row">
+      <input type="date" id="date">
+      <button class="smallbtn" id="dateBack" title="Go back one day">&minus;1 day</button>
+    </div>
+
+    <label for="time">Time</label>
+    <input type="time" id="time">
+
+    <label for="oz">Ounces</label>
+    <input type="number" id="oz" inputmode="decimal" step="0.5" min="0" placeholder="e.g. 5">
+
+    <label for="note">Comments (optional)</label>
+    <input type="text" id="note" placeholder="e.g. urgent, small amount">
+
+    <button class="save-btn" id="saveBtn">Save Entry</button>
+  </div>
+
+  <div class="card">
+    <div class="total" id="totalLine"></div>
+    <div class="entries" id="entries"></div>
+  </div>
+
+  <div class="actions">
+    <button id="exportBtn" class="copy">Copy nocturia_log Commands</button>
+    <button id="clearBtn">Clear All</button>
+  </div>
+
+  <textarea id="cmdbox" class="hidden" readonly></textarea>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function() {
+  var STORAGE_KEY = "nighttime_log_entries";
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+
+  function nowTimeStr() {
+    var d = new Date();
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  function loadEntries() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveEntries(entries) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    } catch (e) {
+      showToast("Couldn't save (storage unavailable)");
+    }
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function() { t.classList.remove("show"); }, 1600);
+  }
+
+  function fmtDateHuman(dateStr) {
+    var parts = dateStr.split("-");
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    var opts = { weekday: "short", month: "short", day: "numeric" };
+    return d.toLocaleDateString(undefined, opts);
+  }
+
+  function render() {
+    var entries = loadEntries();
+    var container = document.getElementById("entries");
+    var totalLine = document.getElementById("totalLine");
+    container.innerHTML = "";
+
+    if (entries.length === 0) {
+      container.innerHTML = '<div class="empty">No entries yet.</div>';
+      totalLine.textContent = "";
+      return;
+    }
+
+    // newest first
+    var sorted = entries.slice().sort(function(a, b) {
+      var da = a.date + " " + a.time;
+      var db = b.date + " " + b.time;
+      return da < db ? 1 : (da > db ? -1 : 0);
+    });
+
+    var total = 0;
+    sorted.forEach(function(e) {
+      var n = parseFloat(e.oz);
+      if (!isNaN(n)) total += n;
+    });
+    totalLine.textContent = entries.length + " entr" + (entries.length === 1 ? "y" : "ies") +
+      (total > 0 ? " \u2014 " + round1(total) + " oz total" : "");
+
+    sorted.forEach(function(e) {
+      var row = document.createElement("div");
+      row.className = "entry";
+
+      var meta = document.createElement("div");
+      meta.className = "meta";
+
+      var when = document.createElement("div");
+      when.className = "when";
+      when.textContent = fmtDateHuman(e.date) + "  " + e.time +
+        (e.oz !== "" && e.oz !== undefined && e.oz !== null ? "  \u2014  " : "");
+      var ozSpan = document.createElement("span");
+      ozSpan.className = "oz";
+      ozSpan.textContent = (e.oz !== "" && e.oz !== undefined && e.oz !== null) ? e.oz + " oz" : "amount unknown";
+      when.appendChild(ozSpan);
+      meta.appendChild(when);
+
+      if (e.note) {
+        var note = document.createElement("div");
+        note.className = "note";
+        note.textContent = e.note;
+        meta.appendChild(note);
+      }
+
+      var del = document.createElement("button");
+      del.className = "del";
+      del.setAttribute("aria-label", "Delete entry");
+      del.textContent = "\u00d7";
+      del.addEventListener("click", function() {
+        var all = loadEntries();
+        var idx = all.indexOf(e);
+        // indexOf on object won't match after sort/copy; find by identity fields instead
+        idx = all.findIndex(function(x) {
+          return x.date === e.date && x.time === e.time && x.oz === e.oz && x.note === e.note && x._id === e._id;
+        });
+        if (idx > -1) {
+          all.splice(idx, 1);
+          saveEntries(all);
+          render();
+        }
+      });
+
+      row.appendChild(meta);
+      row.appendChild(del);
+      container.appendChild(row);
+    });
+  }
+
+  function round1(n) {
+    return Math.round(n * 10) / 10;
+  }
+
+  function resetInputs() {
+    document.getElementById("date").value = todayStr();
+    document.getElementById("time").value = nowTimeStr();
+    document.getElementById("oz").value = "";
+    document.getElementById("note").value = "";
+  }
+
+  document.getElementById("dateBack").addEventListener("click", function() {
+    var inp = document.getElementById("date");
+    var parts = inp.value.split("-");
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    d.setDate(d.getDate() - 1);
+    inp.value = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  });
+
+  document.getElementById("saveBtn").addEventListener("click", function() {
+    var date = document.getElementById("date").value || todayStr();
+    var time = document.getElementById("time").value || nowTimeStr();
+    var oz = document.getElementById("oz").value;
+    var note = document.getElementById("note").value.trim();
+
+    var entries = loadEntries();
+    entries.push({ date: date, time: time, oz: oz, note: note, _id: Date.now() + "_" + Math.random() });
+    saveEntries(entries);
+
+    showToast("Saved");
+    resetInputs();
+    render();
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", function() {
+    if (confirm("Clear all logged entries? Make sure you've copied the commands first.")) {
+      saveEntries([]);
+      document.getElementById("cmdbox").classList.add("hidden");
+      render();
+    }
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", function() {
+    var entries = loadEntries();
+    if (entries.length === 0) {
+      showToast("Nothing to export");
+      return;
+    }
+    var sorted = entries.slice().sort(function(a, b) {
+      var da = a.date + " " + a.time;
+      var db = b.date + " " + b.time;
+      return da < db ? -1 : (da > db ? 1 : 0);
+    });
+
+    var lines = sorted.map(function(e) {
+      var cmd = "nocturia_log " + e.time;
+      if (e.oz !== "" && e.oz !== undefined && e.oz !== null) {
+        cmd += " " + e.oz;
+      }
+      if (e.note) {
+        var escaped = e.note.replace(/"/g, '\\"');
+        cmd += ' "' + escaped + '"';
+      }
+      cmd += " -d " + e.date;
+      return cmd;
+    });
+
+    var text = lines.join("\n");
+    var box = document.getElementById("cmdbox");
+    box.value = text;
+    box.classList.remove("hidden");
+    box.focus();
+    box.select();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        showToast("Copied " + lines.length + " command(s)");
+      }).catch(function() {
+        showToast("Select the text below to copy");
+      });
+    } else {
+      try {
+        document.execCommand("copy");
+        showToast("Copied " + lines.length + " command(s)");
+      } catch (e) {
+        showToast("Select the text below to copy");
+      }
+    }
+  });
+
+  resetInputs();
+  render();
+})();
+</script>
+</body>
+</html>
